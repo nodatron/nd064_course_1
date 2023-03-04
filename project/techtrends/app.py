@@ -25,9 +25,7 @@ app.config['SECRET_KEY'] = 'your secret key'
 # Define the main route of the web application 
 @app.route('/')
 def index():
-    connection = get_db_connection()
-    posts = connection.execute('SELECT * FROM posts').fetchall()
-    connection.close()
+    posts = get_all_posts()
     return render_template('index.html', posts=posts)
 
 # Define how each individual article is rendered 
@@ -64,6 +62,30 @@ def create():
             return redirect(url_for('index'))
 
     return render_template('create.html')
+
+def get_all_posts():
+    connection = get_db_connection()
+    posts = connection.execute('SELECT * FROM posts').fetchall()
+    connection.close()
+    return posts
+
+@app.route('/healthz')
+def healthz():
+    return app.response_class(
+        response=json.dumps({"result": "OK - healthy"}),
+        status=200,
+        mimetype='application/json'
+    )
+
+@app.route('/metrics')
+def metrics():
+    total_posts = len(get_all_posts())
+    # TODO: Get the total connections to the database
+    return app.response_class(
+        response=json.dumps({"post_count": total_posts}),
+        status=200,
+        mimetype='application/json'
+    )
 
 # start the application on port 3111
 if __name__ == "__main__":
